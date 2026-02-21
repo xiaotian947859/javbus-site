@@ -8,6 +8,4 @@ env/
 venv/
 .venv/
 .env
-static/images/
-static/images/samples/
 javbus.db
