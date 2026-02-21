@@ -41,21 +41,31 @@ def get_movies():
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 20, type=int)
     offset = (page - 1) * per_page
-    
-    conn = get_db_connection()
-    if DB_TYPE == "mysql":
-        with conn.cursor() as c:
-            c.execute('SELECT COUNT(*) AS c FROM movies')
-            total = c.fetchone()['c']
-            c.execute('SELECT * FROM movies ORDER BY date DESC LIMIT %s OFFSET %s', (per_page, offset))
-            movies = c.fetchall()
-    else:
-        total = conn.execute('SELECT COUNT(*) FROM movies').fetchone()[0]
-        movies = conn.execute('SELECT * FROM movies ORDER BY date DESC LIMIT ? OFFSET ?', 
-                              (per_page, offset)).fetchall()
-        movies = [dict(m) for m in movies]
-        conn.close()
-    
+    try:
+        conn = get_db_connection()
+        if DB_TYPE == "mysql":
+            with conn.cursor() as c:
+                c.execute('SELECT COUNT(*) AS c FROM movies')
+                total = c.fetchone()['c']
+                c.execute('SELECT * FROM movies ORDER BY date DESC LIMIT %s OFFSET %s', (per_page, offset))
+                movies = c.fetchall()
+        else:
+            try:
+                row = conn.execute('SELECT COUNT(*) FROM movies').fetchone()
+                total = row[0] if row else 0
+                rows = conn.execute('SELECT * FROM movies ORDER BY date DESC LIMIT ? OFFSET ?', 
+                                    (per_page, offset)).fetchall()
+                movies = [dict(m) for m in rows]
+            except Exception:
+                total = 0
+                movies = []
+            finally:
+                conn.close()
+    except Exception:
+        total = 0
+        movies = []
+        movies = []
+
     movie_list = []
     for movie in movies:
         movie_dict = dict(movie)
