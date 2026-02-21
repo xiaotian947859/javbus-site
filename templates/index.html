@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JavBus 媒体库</title>
+    <!-- 引入 Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- 引入 Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- 引入 FontAwesome 图标 -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg-body: #121212;
+            --bg-card: #1e1e1e;
+            --bg-card-hover: #2d2d2d;
+            --accent-color: #3b82f6;
+            --text-primary: #e5e7eb;
+            --text-secondary: #9ca3af;
+        }
+
+        body {
+            background-color: var(--bg-body);
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            color: var(--text-primary);
+        }
+
+        /* 毛玻璃导航栏 */
+        .navbar {
+            background-color: rgba(18, 18, 18, 0.85) !important;
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* 卡片设计 */
+        .movie-card {
+            background-color: var(--bg-card);
+            border: none;
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            height: 100%;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            cursor: pointer;
+            position: relative;
+        }
+
+        .movie-card:hover {
+            transform: translateY(-8px);
+            background-color: var(--bg-card-hover);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-img-wrapper {
+            position: relative;
+            padding-top: 140%; /* 保持封面比例 */
+            overflow: hidden;
+        }
+
+        .card-img-top {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+
+        .movie-card:hover .card-img-top {
+            transform: scale(1.05);
+        }
+
+        /* 磁力数量徽章 */
+        .badge-magnet {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 6px 10px;
+            font-weight: 600;
+            border-radius: 8px;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .card-body {
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .card-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            line-height: 1.4;
+            margin: 0;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            color: var(--text-primary);
+        }
+
+        .card-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: auto;
+            font-size: 0.8rem;
+        }
+
+        .code-badge {
+            background-color: rgba(59, 130, 246, 0.15);
+            color: #60a5fa;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-weight: 600;
+        }
+
+        .date-text {
+            color: var(--text-secondary);
+        }
+
+        /* 分页样式 */
+        .pagination {
+            gap: 5px;
+        }
+        
+        .page-link {
+            border-radius: 8px !important;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background-color: var(--bg-card);
+            color: var(--text-primary);
+            transition: all 0.2s;
+        }
+
+        .page-link:hover {
+            background-color: var(--bg-card-hover);
+            color: white;
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .page-item.active .page-link {
+            background-color: var(--accent-color);
+            border-color: var(--accent-color);
+        }
+
+        .page-item.disabled .page-link {
+            background-color: transparent;
+            color: #555;
+            border-color: rgba(255, 255, 255, 0.05);
+        }
+
+        /* 模态框样式 */
+        .modal-content {
+            background-color: #1a1a1a;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-header {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-close {
+            filter: invert(1);
+        }
+
+        .modal-img-wrapper {
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        .list-group-item {
+            background-color: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            border-radius: 8px !important;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .list-group-item:hover {
+            background-color: rgba(255, 255, 255, 0.08);
+            color: white;
+            transform: translateX(5px);
+        }
+
+        .magnet-link-text {
+            font-family: monospace;
+            font-size: 0.85rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .btn-copy {
+            padding: 4px 10px;
+            font-size: 0.8rem;
+        }
+
+        /* 骨架屏加载动画 */
+        .skeleton {
+            background: linear-gradient(90deg, #1e1e1e 25%, #2a2a2a 50%, #1e1e1e 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar navbar-expand-lg navbar-dark mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fa-solid fa-layer-group text-primary"></i>
+                JavBus Viewer
+            </a>
+            <div class="d-flex align-items-center">
+                <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-3 py-2 rounded-pill" id="total-count">
+                    <i class="fa-solid fa-spinner fa-spin me-2"></i> 加载中...
+                </span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主内容区 -->
+    <div class="container py-2">
+        <div id="movie-grid" class="row row-cols-2 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 g-4">
+            <!-- 电影卡片将在这里动态插入 -->
+        </div>
+        
+        <!-- 分页 -->
+        <div class="d-flex justify-content-center mt-5 mb-5">
+            <nav>
+                <ul class="pagination" id="pagination"></ul>
+            </nav>
+        </div>
+    </div>
+
+    <!-- 详情模态框 -->
+    <div class="modal fade" id="detailModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title d-flex align-items-center gap-2">
+                        <span id="modalCode" class="badge bg-primary"></span>
+                        <span id="modalTitle" class="text-truncate" style="max-width: 400px;"></span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-4">
+                        <div class="col-md-5">
+                            <div class="modal-img-wrapper">
+                                <img id="modalImg" src="" class="img-fluid w-100" alt="封面" style="min-height: 200px; background: #222;">
+                            </div>
+                            <div class="mt-3 text-center">
+                                <p class="text-muted mb-1"><small>发行日期</small></p>
+                                <p id="modalDate" class="fw-bold"></p>
+                            </div>
+                        </div>
+                        <div class="col-md-7">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="mb-0 text-white"><i class="fa-solid fa-magnet text-danger me-2"></i>磁力下载</h6>
+                                <span class="badge bg-secondary" id="modalMagnetCount">0</span>
+                            </div>
+                            <div class="list-group list-group-flush" id="magnetList" style="max-height: 400px; overflow-y: auto;">
+                                <!-- 磁力链接列表 -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 提示框 -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <div id="copyToast" class="toast align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="fa-solid fa-check-circle me-2"></i> 已复制到剪贴板
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let currentPage = 1;
+        const detailModal = new bootstrap.Modal(document.getElementById('detailModal'));
+        const copyToast = new bootstrap.Toast(document.getElementById('copyToast'));
+
+        // 格式化日期
+        function formatDate(dateStr) {
+            if (!dateStr) return '未知';
+            return dateStr;
+        }
+
+        async function loadMovies(page = 1) {
+            // 加载状态
+            document.getElementById('total-count').innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i> 加载中...';
+            
+            try {
+                const response = await fetch(`/api/movies?page=${page}`);
+                const data = await response.json();
+                
+                document.getElementById('total-count').innerHTML = `<i class="fa-solid fa-film me-2"></i> 共 ${data.total} 部影片`;
+                renderMovies(data.movies);
+                renderPagination(data.page, Math.ceil(data.total / data.per_page));
+                currentPage = page;
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } catch (error) {
+                console.error('加载失败:', error);
+                document.getElementById('total-count').textContent = '加载失败';
+            }
+        }
+
+        function renderMovies(movies) {
+            const grid = document.getElementById('movie-grid');
+            
+            // 延迟一点显示内容以配合动画（可选）
+            grid.innerHTML = movies.map(movie => `
+                <div class="col">
+                    <div class="card movie-card h-100" onclick="showDetail('${movie.code}')">
+                        <div class="card-img-wrapper">
+                            <img src="${movie.img_url}" class="card-img-top" loading="lazy" alt="${movie.title}" 
+                                 onerror="this.src='https://via.placeholder.com/300x400/2a2a2a/aaaaaa?text=No+Image'">
+                            <div class="badge-magnet">
+                                <i class="fa-solid fa-bolt text-warning"></i> ${movie.magnet_count}
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <h6 class="card-title" title="${movie.title}">${movie.title}</h6>
+                            <div class="card-meta">
+                                <span class="code-badge">${movie.code}</span>
+                                <span class="date-text"><i class="fa-regular fa-calendar me-1"></i>${formatDate(movie.date)}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderPagination(current, total) {
+            const pagination = document.getElementById('pagination');
+            let html = '';
+            
+            // 上一页
+            html += `<li class="page-item ${current === 1 ? 'disabled' : ''}">
+                <a class="page-link" href="#" onclick="loadMovies(${current - 1})" aria-label="Previous">
+                    <i class="fa-solid fa-chevron-left"></i>
+                </a>
+            </li>`;
+            
+            // 页码逻辑
+            let startPage = Math.max(1, current - 2);
+            let endPage = Math.min(total, current + 2);
+
+            if (startPage > 1) {
+                html += `<li class="page-item"><a class="page-link" href="#" onclick="loadMovies(1)">1</a></li>`;
+                if (startPage > 2) html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+            }
+
+            for (let i = startPage; i <= endPage; i++) {
+                html += `<li class="page-item ${i === current ? 'active' : ''}">
+                    <a class="page-link" href="#" onclick="loadMovies(${i})">${i}</a>
+                </li>`;
+            }
+
+            if (endPage < total) {
+                if (endPage < total - 1) html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+                html += `<li class="page-item"><a class="page-link" href="#" onclick="loadMovies(${total})">${total}</a></li>`;
+            }
+            
+            // 下一页
+            html += `<li class="page-item ${current === total ? 'disabled' : ''}">
+                <a class="page-link" href="#" onclick="loadMovies(${current + 1})" aria-label="Next">
+                    <i class="fa-solid fa-chevron-right"></i>
+                </a>
+            </li>`;
+            
+            pagination.innerHTML = html;
+        }
+
+        async function showDetail(code) {
+            try {
+                // 清空旧数据
+                document.getElementById('modalTitle').textContent = '加载中...';
+                document.getElementById('magnetList').innerHTML = '<div class="text-center py-4"><i class="fa-solid fa-spinner fa-spin fa-2x text-muted"></i></div>';
+                detailModal.show();
+
+                const response = await fetch(`/api/movie/${code}`);
+                const movie = await response.json();
+                
+                document.getElementById('modalTitle').textContent = movie.title;
+                document.getElementById('modalImg').src = movie.img_url;
+                document.getElementById('modalCode').textContent = movie.code;
+                document.getElementById('modalDate').textContent = formatDate(movie.date);
+                document.getElementById('modalMagnetCount').textContent = movie.magnets.length;
+                
+                const magnetList = document.getElementById('magnetList');
+                if (movie.magnets.length === 0) {
+                    magnetList.innerHTML = `
+                        <div class="text-center py-5 text-muted">
+                            <i class="fa-regular fa-folder-open fa-3x mb-3"></i>
+                            <p>暂无下载链接</p>
+                        </div>`;
+                } else {
+                    magnetList.innerHTML = movie.magnets.map((magnet, index) => {
+                        // 尝试从磁力链接中提取文件大小或哈希（如果有的话），这里简单处理
+                        const shortLink = magnet.substring(0, 40) + '...';
+                        return `
+                        <div class="list-group-item">
+                            <div class="d-flex align-items-center gap-3 overflow-hidden">
+                                <div class="flex-shrink-0 text-muted">
+                                    <i class="fa-solid fa-link"></i> ${index + 1}
+                                </div>
+                                <div class="magnet-link-text text-truncate" title="${magnet}">
+                                    ${magnet}
+                                </div>
+                            </div>
+                            <button class="btn btn-sm btn-outline-primary btn-copy flex-shrink-0" onclick="copyToClipboard('${magnet}')">
+                                <i class="fa-regular fa-copy"></i> 复制
+                            </button>
+                        </div>
+                    `}).join('');
+                }
+            } catch (error) {
+                console.error('获取详情失败:', error);
+                document.getElementById('modalTitle').textContent = '获取失败';
+            }
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                copyToast.show();
+            }).catch(err => {
+                console.error('无法复制', err);
+                alert('复制失败，请手动复制');
+            });
+        }
+
+        // 初始加载
+        loadMovies();
+    </script>
+</body>
+</html>
