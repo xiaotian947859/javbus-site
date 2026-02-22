@@ -1,0 +1,31 @@
+name: Deploy to Baota Server
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.BT_HOST }}
+          username: ${{ secrets.BT_USER }}
+          password: ${{ secrets.BT_PASSWORD }}
+          port: ${{ secrets.BT_PORT }}
+          script: |
+            cd /www/wwwroot/javbus-site
+            git pull
+            python3 -m venv venv || true
+            source venv/bin/activate
+            pip install --upgrade pip
+            pip install -r requirements.txt
+            # 根据你的进程管理方式选择其一：
+            # 如果用的是 Supervisor：
+            # supervisorctl restart javbus-site || true
+            # 如果用的是 systemd：
+            # systemctl restart javbus-site.service || true
